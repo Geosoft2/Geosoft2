@@ -16,7 +16,7 @@ import org.apache.log4j.PropertyConfigurator;
  * @author sven
  *
  */
-public class Main {
+public class OutlierDetection {
 	
 	
 
@@ -38,12 +38,13 @@ public class Main {
 		try {
 			//create new database connection
 			databaseCon dbCon = new databaseCon();
+			logger.info("Database connection established");
 			
 			// invalid query -> for testing purposes
 			//ValueSet testPoint = dbCon.getOldestUncheckedValue(30, "urn:ogc:object:feature:Sensor:AQE:temperature-sensor", "75842");
 			
 			//load the properties file
-			properties.load(new FileInputStream("outlier_config.properties"));
+			properties.load(new FileInputStream("config.properties"));
 
 			boolean reset = Boolean.valueOf(properties.getProperty("reset_outlier_information"));
 			
@@ -51,7 +52,7 @@ public class Main {
 			if (reset) dbCon.resetOutlierMarking();
 			
 			//Get newest timestamp from quality table as reference
-			Date refDate = dbCon.getNewestQualityTimestamp();
+			//Date refDate = dbCon.getNewestQualityTimestamp();
 			
 			// set window width from properties file
 			int winWidth = Integer.valueOf(properties.getProperty("window_width"));
@@ -60,7 +61,7 @@ public class Main {
 			double borderMultiplicator = Double.valueOf(properties.getProperty("border_multiplicator"));
 			rm.setBorderMultiplicator(borderMultiplicator);
 			
-			
+			logger.info("Collect the features ids");
 			// get all features and their phenomenons
 			// first get the feaures ids
 			ArrayList<String> featureIds = dbCon.getAllFeatures();
@@ -78,7 +79,8 @@ public class Main {
 				//add feature to feature collection
 				features.add(tempFeature);
 			}
-			
+			logger.info("Ids collected");
+			logger.info("Iterate over features");
 			//iterate over the features
 			Iterator<Feature> featIter = features.iterator();
 			while(featIter.hasNext()){
@@ -86,20 +88,27 @@ public class Main {
 				Feature tempFeature = featIter.next();
 				// temporary featureId
 				String featureId = tempFeature.getId();
+				logger.info("Current feature: " + featureId);
+				logger.info("Iterate over phenomena");
 				// iterate over the features phenomena
 				ArrayList<String> phenomena = tempFeature.getPhenomena();
 				Iterator<String> phenIter = phenomena.iterator();
 				while(phenIter.hasNext()){
 					//current phenomenon
 					String tempPhenomenon = phenIter.next();
+					logger.info("Current phenomenon: " + tempPhenomenon);
+					Date refDate = dbCon.getNewestQualityTimestamp(featureId, tempPhenomenon);
 					// search for outliers
 					ValueSet checkPoint = dbCon.getOldestUncheckedValue(winWidth, tempPhenomenon, featureId);
 					//check every value that is younger than the reference date
 					while( checkPoint!=null && refDate.after(checkPoint.getDate()) ){
+						logger.info("refDate: " + refDate);
+						logger.info("checkPoint found - " + checkPoint.getDate() + "  qualityId: " + checkPoint.getQuality_id() );
 					//check for outliers
 						//get the ValueSets used to test the current value, sorted by value
 						ArrayList<ValueSet> valuesInWindowList = dbCon.getValuesInWindow(checkPoint, winWidth, tempPhenomenon, featureId, true);
 						//check if there are enough values for outlier detection in database
+						logger.info(valuesInWindowList.size()==winWidth);
 						//in the beginning there may be not enough values in the database
 						if (valuesInWindowList.size()==winWidth){
 							//check if the current value is an outlier
@@ -110,15 +119,20 @@ public class Main {
 							//update the information in the table
 							dbCon.setOutlierInformation(outlierTag, checkPoint.getQuality_id());
 							logger.info(checkPoint.getDate()+"  "+checkPoint.getQuality_id()+": "+checkPoint.getValue()+" "+checkPoint.getQuality_value()+" "+outlierTag);
+							//save the next value
+							checkPoint = dbCon.getOldestUncheckedValue(winWidth, tempPhenomenon, featureId);
+						} else {
+							// exit condition -> Not enough values in window
+							checkPoint = null;
 						}
-						//save the next value
-						checkPoint = dbCon.getOldestUncheckedValue(winWidth, tempPhenomenon, featureId);
+						
 					}
 				}
 			}
 			
 			// close the database connection
 			dbCon.disconnect();
+			logger.info("Outlier detection complete");
 			
 		} catch (FileNotFoundException e) {
 			logger.warn("outlier_config.properties could not be found");
