@@ -41,7 +41,7 @@ public class databaseCon {
 	 */
 	public databaseCon() throws FileNotFoundException, IOException {
 		// load data from properties file into attributes
-		properties.load(new FileInputStream("outlier_config.properties"));
+		properties.load(new FileInputStream("config.properties"));
 		this.db_username = (String) properties.getProperty("db_username");
 		this.db_password = (String) properties.getProperty("db_password");
 		this.db_url = (String) properties.getProperty("db_url");
@@ -224,6 +224,28 @@ public class databaseCon {
 		}
 		return date;
 	}
+	
+	/**
+	 * Method gets the newest timestamp in the quality table as reference for the outlier detection, corresponding to a features phenomenon
+	 * @param feature_of_interest_id is the feature of interest's id
+	 * @param phenomenon_id is the feature of interest's phenomenon
+	 * @return Newest time_stamp in quality table
+	 */
+	public Date getNewestQualityTimestamp(String feature_of_interest_id, String phenomenon_id){
+		String query = "SELECT MAX(time_stamp) as date FROM observation NATURAL INNER JOIN quality WHERE quality_name='outlier' AND feature_of_interest_id='"+feature_of_interest_id+"' AND phenomenon_id='"+phenomenon_id+"';";
+		Date date = null;
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			rs.next();
+			date = rs.getTimestamp("date");
+		} catch (SQLException e) {
+			logger.warn("Invalid query: "+query);
+			e.printStackTrace();
+		}
+		return date;
+	}
+	
 	
 	/**
 	 * Method reads out the phenomenon assigned to a feature of interest
