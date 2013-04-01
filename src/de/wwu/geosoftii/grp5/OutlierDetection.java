@@ -101,16 +101,15 @@ public class OutlierDetection {
 					// search for outliers
 					ValueSet checkPoint = dbCon.getOldestUncheckedValue(winWidth, tempPhenomenon, featureId);
 					//check every value that is younger than the reference date
-					while( checkPoint!=null && refDate.after(checkPoint.getDate()) ){
-						logger.info("refDate: " + refDate);
-						logger.info("checkPoint found - " + checkPoint.getDate() + "  qualityId: " + checkPoint.getQuality_id() );
+					while( checkPoint!=null && ( refDate.after(checkPoint.getDate()) || refDate.equals(checkPoint.getDate()) ) ){
+						//logger.info("checkPoint found - " + checkPoint.getDate() + "  qualityId: " + checkPoint.getQuality_id() );
 					//check for outliers
 						//get the ValueSets used to test the current value, sorted by value
 						ArrayList<ValueSet> valuesInWindowList = dbCon.getValuesInWindow(checkPoint, winWidth, tempPhenomenon, featureId, true);
 						//check if there are enough values for outlier detection in database
-						logger.info(valuesInWindowList.size()==winWidth);
 						//in the beginning there may be not enough values in the database
 						if (valuesInWindowList.size()==winWidth){
+							logger.info("Check if current value is outlier");
 							//check if the current value is an outlier
 							boolean isOutlier = rm.isOutlier(checkPoint, valuesInWindowList);
 							String outlierTag = "not_tested";
