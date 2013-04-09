@@ -225,11 +225,13 @@ public class databaseCon {
 		return date;
 	}
 	
+	
+	
 	/**
 	 * Method gets the newest timestamp in the quality table as reference for the outlier detection, corresponding to a features phenomenon
 	 * @param feature_of_interest_id is the feature of interest's id
 	 * @param phenomenon_id is the feature of interest's phenomenon
-	 * @return Newest time_stamp in quality table
+	 * @return Newest time_stamp in quality table corresponding to the given phenomenon
 	 */
 	public Date getNewestQualityTimestamp(String feature_of_interest_id, String phenomenon_id){
 		String query = "SELECT MAX(time_stamp) as date FROM observation NATURAL INNER JOIN quality WHERE quality_name='outlier' AND feature_of_interest_id='"+feature_of_interest_id+"' AND phenomenon_id='"+phenomenon_id+"';";
@@ -239,6 +241,29 @@ public class databaseCon {
 			ResultSet rs = stmt.executeQuery(query);
 			rs.next();
 			date = rs.getTimestamp("date");
+		} catch (SQLException e) {
+			logger.warn("Invalid query: "+query);
+			e.printStackTrace();
+		}
+		return date;
+	}
+	
+	
+	/**
+	 *  Method gets the newest (minus offset) timestamp in the quality table as reference for the outlier detection, corresponding to a features phenomenon
+	 * @param feature_of_interest_id is the feature of interest's id
+	 * @param phenomenon_id is the feature of interest's phenomenon
+	 * @param offset
+	 * @return Newest (minus offset) time_stamp in quality table corresponding to the given phenomenon
+	 */
+	public Date getNewestOuterRightQualityTimestamp(String feature_of_interest_id, String phenomenon_id, int offset){
+		String query = "SELECT * FROM ( SELECT time_stamp FROM observation NATURAL INNER JOIN quality WHERE quality_name='outlier' AND feature_of_interest_id='"+feature_of_interest_id+"' AND phenomenon_id='"+phenomenon_id+"' ORDER BY time_stamp DESC LIMIT "+(offset+1)+") as t ORDER BY time_stamp ASC LIMIT 1;";
+		Date date = null;
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			rs.next();
+			date = rs.getTimestamp("time_stamp");
 		} catch (SQLException e) {
 			logger.warn("Invalid query: "+query);
 			e.printStackTrace();
