@@ -214,9 +214,15 @@ public class OutlierDetection {
 			//Get newest timestamp from quality table as reference
 			//Date refDate = dbCon.getNewestQualityTimestamp();
 			
-			// set window width from properties file
-			int winWidth = Integer.valueOf(properties.getProperty("window_width"));
+			// set window width for air quality eggs from properties file
+			int aqeWinWidth = Integer.valueOf(properties.getProperty("aqe_window_width"));
 			
+			// set window width for air quality eggs from properties file
+			int lanuvWinWidth = Integer.valueOf(properties.getProperty("lanuv_window_width"));
+			
+			// filter even numbers
+			if (aqeWinWidth%2==0) aqeWinWidth++;
+			if (lanuvWinWidth%2==0) lanuvWinWidth++;
 			
 			// set border multiplicator
 			double borderMultiplicator = Double.valueOf(properties.getProperty("border_multiplicator"));
@@ -245,12 +251,22 @@ public class OutlierDetection {
 			//iterate over the features
 			Iterator<Feature> featIter = features.iterator();
 			while(featIter.hasNext()){
+				// standard win width
+				int winWidth = 21;
 				// temporary feature
 				Feature tempFeature = featIter.next();
 				// temporary featureId
 				String featureId = tempFeature.getId();
+				if(featureId.equals("Geist")) {
+					winWidth = lanuvWinWidth;
+				} else if (featureId.equals("Weseler")) {
+					winWidth = lanuvWinWidth;
+				} else {
+					winWidth = aqeWinWidth;
+				}
 				logger.info("Current feature: " + featureId);
 				logger.info("Iterate over phenomena");
+				logger.info("win width: "+winWidth);
 				// iterate over the features phenomena
 				ArrayList<String> phenomena = tempFeature.getPhenomena();
 				Iterator<String> phenIter = phenomena.iterator();
