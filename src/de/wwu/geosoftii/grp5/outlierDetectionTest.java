@@ -2,8 +2,17 @@ package de.wwu.geosoftii.grp5;
 
 import java.util.ArrayList;
 
+/**
+ * Test class for different methods used in the outlier detection.
+ * @author sven
+ *
+ */
 public class outlierDetectionTest {
 	
+	/**
+	 * Method that executes the test
+	 * @return true if value is an outlier
+	 */
 	public static boolean executeTest(){
 		
 		//list with test values
@@ -47,7 +56,7 @@ public class outlierDetectionTest {
 		list.add(new ValueSet(null, "dummyID", "31", "not_tested"));
 
 		// point to be tested
-		ValueSet checkPoint = new ValueSet(null, "dummyID", "30", "not_tested");
+		ValueSet checkPoint = new ValueSet(null, "dummyID", "28", "not_tested");
 		
 		return rm.isOutlier(checkPoint, list);
 
