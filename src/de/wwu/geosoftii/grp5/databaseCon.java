@@ -109,7 +109,7 @@ public class databaseCon {
 	
 	/**
 	 * This method gets the all the n values with a timestamp smaller/equal to the checkPoint timestamp.
-	 * -> All the values in window.
+	 * -> All the values in a left sided window.
 	 * It's capable of returning the windows content ordered by timestamp or value
 	 * @param checkPoint the data point the window is calculated for
 	 * @param n is the window width
@@ -306,6 +306,28 @@ public class databaseCon {
 				logger.warn("Invalid query: "+query);
 				e.printStackTrace();
 			}
+	}
+	
+	/**
+	 * Method identifies the number of entries in the quality table corresponding to given feature and phenomenon
+	 * @param feature_of_interest_id is the features id
+	 * @param phenomenon_id is the phenomenon's id
+	 * @return Method returns the number of entries as int.
+	 */
+	public int getNumberOfOutlierEntries(String feature_of_interest_id, String phenomenon_id){
+		String query = "SELECT COUNT(*) FROM observation NATURAL INNER JOIN  quality WHERE quality_name='outlier' AND feature_of_interest_id='"+feature_of_interest_id+"' AND phenomenon_id='"+phenomenon_id+"';";
+		int count = 0;
+		try{
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			if(rs.next()){
+				count = rs.getInt("count");
+			}
+		} catch (SQLException e) {
+			logger.warn("Invalid query: "+query);
+			e.printStackTrace();
+		}
+		return count;
 	}
 	
 	

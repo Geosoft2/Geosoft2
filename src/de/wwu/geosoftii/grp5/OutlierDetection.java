@@ -274,49 +274,51 @@ public class OutlierDetection {
 					//current phenomenon
 					String tempPhenomenon = phenIter.next();
 					logger.info("Current phenomenon: " + tempPhenomenon);
-					// get newest value left of the half of the given window size
-					//Example for window size 7: ...*******[***+***]| -> the plus is the wanted value
-					Date refDate = dbCon.getNewestOuterRightQualityTimestamp(featureId, tempPhenomenon, (int)(winWidth/2.0));
-					// search for outliers
-					//middle of window, to be checked
-					ValueSet checkPoint = dbCon.getOldestUncheckedValue((int)Math.ceil(winWidth/2.0), tempPhenomenon, featureId);
-					//right outer border of window
-					ValueSet rightBorder = dbCon.getOldestUncheckedValue(winWidth, tempPhenomenon, featureId);
-					//check every value that is younger than the reference date
-					while( checkPoint!=null && ( refDate.after(checkPoint.getDate()) || refDate.equals(checkPoint.getDate()) ) ){
-						//logger.info("checkPoint found - " + checkPoint.getDate() + "  qualityId: " + checkPoint.getQuality_id() );
-					//check for outliers
-					
-						//get the ValueSets used to test the current value, sorted by value
-						ArrayList<ValueSet> valuesInWindowList = dbCon.getValuesInWindow(rightBorder, winWidth, tempPhenomenon, featureId, true);
+					// check, if there are enough values in database
+					if (dbCon.getNumberOfOutlierEntries(featureId, tempPhenomenon)>=winWidth) {
+						// get newest value left of the half of the given window size
+						//Example for window size 7: ...*******[***+***]| -> the plus is the wanted value
+						Date refDate = dbCon.getNewestOuterRightQualityTimestamp(featureId, tempPhenomenon, (int)(winWidth/2.0));
+						// search for outliers
+						//middle of window, to be checked
+						ValueSet checkPoint = dbCon.getOldestUncheckedValue((int)Math.ceil(winWidth/2.0), tempPhenomenon, featureId);
+						//right outer border of window
+						ValueSet rightBorder = dbCon.getOldestUncheckedValue(winWidth, tempPhenomenon, featureId);
+						//check every value that is younger than the reference date
+						while( checkPoint!=null && ( refDate.after(checkPoint.getDate()) || refDate.equals(checkPoint.getDate()) ) ){
+							//logger.info("checkPoint found - " + checkPoint.getDate() + "  qualityId: " + checkPoint.getQuality_id() );
+						//check for outliers
 						
-						//check if there are enough values for outlier detection in database
-						//in the beginning there may be not enough values in the database
-						if (valuesInWindowList.size()==winWidth){
-							//logger.info("Check if current value is outlier");
-							//check if the current value is an outlier
-							boolean isOutlier = rm.isOutlier(checkPoint, valuesInWindowList);
-							String outlierTag = "not_tested";
-							if (isOutlier) outlierTag = "yes";
-							else if (!isOutlier) outlierTag = "no";
-							//update the information in the table
-							dbCon.setOutlierInformation(outlierTag, checkPoint.getQuality_id());
-							//logger.info(checkPoint.getDate()+"  "+checkPoint.getQuality_id()+": "+checkPoint.getValue()+" "+checkPoint.getQuality_value()+" "+outlierTag);
-							//save the next value
-							checkPoint = dbCon.getOldestUncheckedValue((int) Math.ceil(winWidth/2.0), tempPhenomenon, featureId);
-							//right outer border of window
-							rightBorder = dbCon.getOldestUncheckedValue(winWidth, tempPhenomenon, featureId);
-						} else {
-							// exit condition -> Not enough values in window
-							checkPoint = null;
+							//get the ValueSets used to test the current value, sorted by value
+							ArrayList<ValueSet> valuesInWindowList = dbCon.getValuesInWindow(rightBorder, winWidth, tempPhenomenon, featureId, true);
+							
+							//check if there are enough values for outlier detection in database
+							//in the beginning there may be not enough values in the database
+							if (valuesInWindowList.size()==winWidth){
+								//logger.info("Check if current value is outlier");
+								//check if the current value is an outlier
+								boolean isOutlier = rm.isOutlier(checkPoint, valuesInWindowList);
+								String outlierTag = "not_tested";
+								if (isOutlier) outlierTag = "yes";
+								else if (!isOutlier) outlierTag = "no";
+								//update the information in the table
+								dbCon.setOutlierInformation(outlierTag, checkPoint.getQuality_id());
+								//logger.info(checkPoint.getDate()+"  "+checkPoint.getQuality_id()+": "+checkPoint.getValue()+" "+checkPoint.getQuality_value()+" "+outlierTag);
+								//save the next value
+								checkPoint = dbCon.getOldestUncheckedValue((int) Math.ceil(winWidth/2.0), tempPhenomenon, featureId);
+								//right outer border of window
+								rightBorder = dbCon.getOldestUncheckedValue(winWidth, tempPhenomenon, featureId);
+							} else {
+								// exit condition -> Not enough values in window
+								checkPoint = null;
+							}
+							
 						}
-						
 					}
 					
 				}
 				
 			}
-			
 			// close the database connection
 			dbCon.disconnect();
 			logger.info("Outlier detection complete");
