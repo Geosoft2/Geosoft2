@@ -193,7 +193,7 @@ public class databaseCon {
 	 * @param quality_id is primary key in outlier table
 	 */
 	public void setOutlierInformation(String tag, String quality_id){
-		if (tag=="yes" || tag=="no" || tag=="not_tested"){
+		if (tag.equals("yes") || tag.equals("no") || tag.equals("not_tested")){
 			String query = "UPDATE quality SET quality_value='"+tag+"' WHERE quality_id='"+quality_id+"';";
 			try {
 				Statement stmt = con.createStatement();
