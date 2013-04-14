@@ -13,12 +13,6 @@ import java.util.ArrayList;
 
 public class RunningMedian {
 	
-	/**
-	 * Method to sort an array.
-	 * Quicksort is used to check each value of the array and sort it.
-	 * 
-	 * @param x		the array to be sorted
-	 */
 	
 	private double borderMultiplicator = 1.5;
 	
@@ -60,14 +54,18 @@ public class RunningMedian {
 		double median = this.median(list);
 		// calculate 25 % quartile
 		double quartile25 = list.get((int)Math.ceil(list.size()*0.25)-1).getValueAsDouble();
+		//System.out.println(quartile25);
 		// calculate 75 % quartile
 		double quartile75 = list.get((int)Math.ceil(list.size()*0.75)-1).getValueAsDouble();
+		//System.out.println(quartile75);
 		// calculate IQR
 		double IQR = quartile75 - quartile25;
 		// define maxBorder
 		double maxBorder = median + borderMultiplicator * IQR;
+		//System.out.println(maxBorder);
 		// define minBorder
 		double minBorder = median - borderMultiplicator * IQR;
+		//System.out.println(minBorder);
 		//check if the tested value is outside of the borders
 		if (val.getValueAsDouble()<minBorder || val.getValueAsDouble()>maxBorder) outlierTag = true;
 		

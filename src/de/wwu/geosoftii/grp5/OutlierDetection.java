@@ -31,7 +31,7 @@ public class OutlierDetection {
 		// do the two sided window outlier detection
 		twoSidedWindowOutlierDetection();
 		
-		//System.out.println(outlierDetectionTest.executeTest());
+		//System.out.println(outlierDetectionTest.executeTest(12));
 
 		
 	
@@ -64,6 +64,9 @@ public class OutlierDetection {
 		
 	}
 	
+	/**
+	 * Method executes the left sided windwo outlier detection
+	 */
 	static void leftSidedWindowOutlierDetection(){
 		//logging stuff
 				Logger logger = Logger.getRootLogger();
@@ -174,7 +177,7 @@ public class OutlierDetection {
 					logger.info("Outlier detection complete");
 					
 				} catch (FileNotFoundException e) {
-					logger.warn("outlier_config.properties could not be found");
+					logger.warn("config.properties could not be found");
 					e.printStackTrace();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
@@ -183,6 +186,10 @@ public class OutlierDetection {
 		
 	}
 	
+	
+	/**
+	 * Method executes the two sided window outlier detection
+	 */
 	static void twoSidedWindowOutlierDetection(){
 		
 		//logging stuff
@@ -273,6 +280,7 @@ public class OutlierDetection {
 				while(phenIter.hasNext()){
 					//current phenomenon
 					String tempPhenomenon = phenIter.next();
+					//logger.info("########################################");
 					logger.info("Current phenomenon: " + tempPhenomenon);
 					// check, if there are enough values in database
 					if (dbCon.getNumberOfOutlierEntries(featureId, tempPhenomenon)>=winWidth) {
@@ -282,8 +290,10 @@ public class OutlierDetection {
 						// search for outliers
 						//middle of window, to be checked
 						ValueSet checkPoint = dbCon.getOldestUncheckedValue((int)Math.ceil(winWidth/2.0), tempPhenomenon, featureId);
+						//logger.info("quality_id of first value to be checked: "+checkPoint.getQuality_id());
 						//right outer border of window
 						ValueSet rightBorder = dbCon.getOldestUncheckedValue(winWidth, tempPhenomenon, featureId);
+						//logger.info("right border: "+rightBorder.getQuality_id());
 						//check every value that is younger than the reference date
 						while( checkPoint!=null && ( refDate.after(checkPoint.getDate()) || refDate.equals(checkPoint.getDate()) ) ){
 							//logger.info("checkPoint found - " + checkPoint.getDate() + "  qualityId: " + checkPoint.getQuality_id() );
@@ -291,6 +301,40 @@ public class OutlierDetection {
 						
 							//get the ValueSets used to test the current value, sorted by value
 							ArrayList<ValueSet> valuesInWindowList = dbCon.getValuesInWindow(rightBorder, winWidth, tempPhenomenon, featureId, true);
+							
+							/*
+							//############################################################ debug part
+							logger.info("----------------------------");
+							logger.info("current value to be checked: " + checkPoint.getQuality_id());
+							// ordered by timestamp for debugging purposes
+							ArrayList<ValueSet> debugValuesInWindowList = dbCon.getValuesInWindow(rightBorder, winWidth, tempPhenomenon, featureId, false);
+							
+							ArrayList<String> valuesInWindowListAsStrings = new ArrayList<String>();
+							ArrayList<String> debugValuesInWindowListAsStrings = new ArrayList<String>();
+							
+							for(ValueSet val : valuesInWindowList){
+								valuesInWindowListAsStrings.add(val.getQuality_id());
+							}
+							
+							for(ValueSet val : debugValuesInWindowList){
+								debugValuesInWindowListAsStrings.add(val.getQuality_id());
+							}
+							
+							// are both windows the same
+								logger.info("are ordered and underdered windows the same: " + valuesInWindowListAsStrings.containsAll(debugValuesInWindowListAsStrings));
+							String debugValuesInWindowString = "";
+							for(ValueSet val : debugValuesInWindowList){
+								debugValuesInWindowString = debugValuesInWindowString + " " +val.getQuality_id();
+							}
+								logger.info("window ordered by timestamp: " + debugValuesInWindowString);
+							// is the current checked value in middle of the window?
+							ValueSet middleOfWindow = debugValuesInWindowList.get((int)Math.ceil(debugValuesInWindowList.size()/2.0)-1);
+							logger.info(middleOfWindow.getQuality_id());
+								logger.info("is current checkPoint in middle of the window: " + middleOfWindow.getQuality_id().equals(checkPoint.getQuality_id()));
+							
+							
+							//#######################################################
+								*/
 							
 							//check if there are enough values for outlier detection in database
 							//in the beginning there may be not enough values in the database
@@ -301,9 +345,11 @@ public class OutlierDetection {
 								String outlierTag = "not_tested";
 								if (isOutlier) outlierTag = "yes";
 								else if (!isOutlier) outlierTag = "no";
+								//logger.info("is outlier? - " + outlierTag);
 								//update the information in the table
 								dbCon.setOutlierInformation(outlierTag, checkPoint.getQuality_id());
 								//logger.info(checkPoint.getDate()+"  "+checkPoint.getQuality_id()+": "+checkPoint.getValue()+" "+checkPoint.getQuality_value()+" "+outlierTag);
+								//logger.info("quality_id " + checkPoint.getQuality_id()+" is now "+dbCon.getQualityInformation(checkPoint.getQuality_id()));
 								//save the next value
 								checkPoint = dbCon.getOldestUncheckedValue((int) Math.ceil(winWidth/2.0), tempPhenomenon, featureId);
 								//right outer border of window
@@ -312,10 +358,11 @@ public class OutlierDetection {
 								// exit condition -> Not enough values in window
 								checkPoint = null;
 							}
+							//logger.info("----------------------------");
 							
 						}
 					}
-					
+					//logger.info("########################################");
 				}
 				
 			}

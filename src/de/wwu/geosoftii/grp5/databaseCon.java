@@ -207,6 +207,28 @@ public class databaseCon {
 	}
 	
 	/**
+	 * Method returns the quality value corresponding to a given quality_id.
+	 * If there's no such id it returns "fail"
+	 * @param quality_id
+	 * @return Quality id as String
+	 */
+	public String getQualityInformation(String quality_id){
+		String query = "SELECT quality_value FROM quality WHERE quality_id='" +quality_id+ "';";
+		String info= "fail";
+				try {
+					Statement stmt = con.createStatement();
+					ResultSet rs = stmt.executeQuery(query);
+					if(rs.next()){
+						info = rs.getString("quality_value");
+					}
+				} catch (SQLException e) {
+					logger.warn("Invalid query: "+query);
+					e.printStackTrace();
+				}
+				return info;
+	}
+	
+	/**
 	 * Method gets the newest timestamp in the quality table as reference for the outlier detection
 	 * @return Newest time_stamp in quality table
 	 */

@@ -11,9 +11,13 @@ public class outlierDetectionTest {
 	
 	/**
 	 * Method that executes the test
+	 * ArrayList of ValueSets (similar to the objects returned by the database request)
 	 * @return true if value is an outlier
 	 */
-	public static boolean executeTest(){
+	public static boolean executeTest(int value){
+		
+		// point to be tested
+		ValueSet checkPoint = new ValueSet(null, "dummyID", ""+value, "not_tested");
 		
 		//list with test values
 		ArrayList<ValueSet> list = new ArrayList<ValueSet>();
@@ -55,8 +59,6 @@ public class outlierDetectionTest {
 		list.add(new ValueSet(null, "dummyID", "30", "not_tested"));
 		list.add(new ValueSet(null, "dummyID", "31", "not_tested"));
 
-		// point to be tested
-		ValueSet checkPoint = new ValueSet(null, "dummyID", "28", "not_tested");
 		
 		return rm.isOutlier(checkPoint, list);
 
